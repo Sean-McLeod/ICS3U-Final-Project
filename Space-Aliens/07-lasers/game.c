@@ -19,11 +19,8 @@ GameCharacter ship;
 GameCharacter alien;
 GameCharacter laser;
 const UBYTE spriteSize = 8;
-const UINT8 screenX = 152;
-const UINT8 screenY = 128;
 const UINT8 offScreenX = 200;
 const UINT8 offScreenY = 200;
-const UINT8 offTopScreen = 10;
 
 
 void performantDelay(UINT8 loops) {
@@ -128,6 +125,10 @@ void menuScene() {
 
 
 void main() {
+    const UINT8 screenX = 152;
+    const UINT8 screenY = 128;
+    const UINT8 offTopScreen = 10;
+    const UINT8 laserSpeed = 9;
 
     menuScene();
 
@@ -192,7 +193,7 @@ void main() {
             moveGameCharacter(&laser, laser.x, laser.y);
         }
 
-        laser.y -= 9;
+        laser.y -= laserSpeed;
         moveGameCharacter(&laser, laser.x, laser.y);
         
         performantDelay(5);
