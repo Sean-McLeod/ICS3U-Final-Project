@@ -182,6 +182,21 @@ void main() {
                 moveGameCharacter(&ship, ship.x, ship.y);
             }
         }
+        // put laser off the screen if the laser touches the top of the screen
+        if (laser.y < offTopScreen) {
+            laser.x = offScreenX;
+            laser.y = offScreenY;
+            moveGameCharacter(&laser, laser.x, laser.y);
+        }
+        // when laser's x coordinate is off the screen, if the laser comes
+        // within the y range of the screen, send it to off screen
+        if (laser.x > screenX) {
+            if (laser.y > offTopScreen && laser.y < screenY) {
+                laser.x = offScreenX;
+                laser.y = offScreenY;
+                moveGameCharacter(&laser, laser.x, laser.y);
+        }
+        }
         if (laser.y < offTopScreen) {
             laser.x = offScreenX;
             laser.y = offScreenY;
