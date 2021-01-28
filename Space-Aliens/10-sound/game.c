@@ -268,6 +268,11 @@ void main() {
         alien.y -= alienSpeed - 2;
         
         moveGameCharacter(&alien, alien.x, alien.y);
+        
+        NR21_REG = 0xA3;
+        NR22_REG = 0xA1;
+        NR23_REG = 0xA6;
+        NR24_REG = 0x85;
         performantDelay(5);        
     }
 
@@ -493,3 +498,4 @@ void main() {
     
     printf("=== GAME  OVER ===");
 }
+
