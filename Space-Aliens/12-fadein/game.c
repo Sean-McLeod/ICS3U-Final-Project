@@ -208,9 +208,9 @@ void setUpAlien4() {
 
 
 void fadeout() {
-    UINT8 i;
-    for (i=0; i<4; i++) {
-        switch(i) {
+    UINT8 counter;
+    for (counter=0; counter<4; counter++) {
+        switch(counter) {
             case(0):
                 BGP_REG = 0xE4;
                 break;
@@ -224,15 +224,15 @@ void fadeout() {
 				BGP_REG = 0xFF;	
 				break;
         }
-        performantDelay(50);
+        performantDelay(20);
     }
 }
 
 
 void fadein() {
-    UINT8 i;
-    for (i=0; i<3; i++) {
-        switch(i) {
+    UINT8 counter;
+    for (counter=0; counter<3; counter++) {
+        switch(counter) {
             case(0):
                 BGP_REG = 0xFE;
                 break;
@@ -244,7 +244,7 @@ void fadein() {
 				break;
 
         }
-        performantDelay(50);
+        performantDelay(20);
     }
 }
 
@@ -560,3 +560,4 @@ void main() {
     
     printf("=== GAME  OVER ===");
 }
+
