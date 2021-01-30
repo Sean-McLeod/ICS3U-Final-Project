@@ -289,7 +289,7 @@ void menuScene() {
 
 
 void endScene() {
-    font_t ibm_font;
+    font_t ibm_font, min_font;
     
     font_init();
     color(BLACK, WHITE, SOLID);  // set color
@@ -297,6 +297,11 @@ void endScene() {
     font_set(ibm_font);
     printf("\n\n\n     GAME OVER!    ");
     printf("\n\n\n\n\n\n\n\n  Your score is: %d", score, "    ");
+    
+    color(LTGREY, WHITE, SOLID);
+    min_font = font_load(font_min);
+    font_set(min_font);
+    printf("\n\n\n\n    Press SELECT");
 }
 
 
@@ -309,307 +314,314 @@ void main() {
     const UINT8 shipSpeed = 5;
     UINT8 randomNumber;
     
-    splashScreen();
-    menuScene();
+    while (1) {
+        splashScreen();
+        menuScene();
 
-    set_bkg_data(0, 6, background_tiles);
-    set_bkg_tiles(0, 0, 20, 18, main_background_map);
+        set_bkg_data(0, 6, background_tiles);
+        set_bkg_tiles(0, 0, 20, 18, main_background_map);
     
-    set_sprite_data(0, 28, gameSprites);
-    setUpShip();
-    setUpAlien();
-    setUpLaser();
-    setUpAlien1();
-    setUpAlien2();
-    setUpAlien3();
-    setUpAlien4();
+        set_sprite_data(0, 28, gameSprites);
+        setUpShip();
+        setUpAlien();
+        setUpLaser();
+        setUpAlien1();
+        setUpAlien2();
+        setUpAlien3();
+        setUpAlien4();
     
-    SHOW_BKG;
-    SHOW_SPRITES;
-    DISPLAY_ON;
+        SHOW_BKG;
+        SHOW_SPRITES;
+        DISPLAY_ON;
     
-    // fade in
-    fadein();
+        // fade in
+        fadein();
 
-    // prepare to make sound
-    // these registers must be in this specific order!
-    NR52_REG = 0x80; // is 1000 0000 in binary and turns on sound
-    NR50_REG = 0x77; // sets the volume for both left and right channel just set to max 0x77
-    NR51_REG = 0xFF; // is 1111 1111 in binary, select which chanels we want to use in this case all of them. One bit for the L one bit for the R of all four channels
+        // prepare to make sound
+        // these registers must be in this specific order!
+        NR52_REG = 0x80; // is 1000 0000 in binary and turns on sound
+        NR50_REG = 0x77; // sets the volume for both left and right channel just set to max 0x77
+        NR51_REG = 0xFF; // is 1111 1111 in binary, select which chanels we want to use in this case all of them. One bit for the L one bit for the R of all four channels
 
-    while(alien.y >= offTopScreen + spriteSize) {
-        alien.x = 82;
-        alien.y -= alienSpeed - 2;
+        while(alien.y >= offTopScreen + spriteSize) {
+            alien.x = 82;
+            alien.y -= alienSpeed - 2;
         
-        moveGameCharacter(&alien, alien.x, alien.y);
-        
-        NR21_REG = 0xA3;
-        NR22_REG = 0xA1;
-        NR23_REG = 0xA6;
-        NR24_REG = 0x85;
-        performantDelay(5);        
-    }
-    
-    while(!checkcollisions(&ship, &alien, &alien1, &alien2, &alien3, &alien4)) {
-        if (joypad() & J_LEFT) {
-            if (ship.x <= spriteSize) {
-                ship.x = spriteSize;
-                moveGameCharacter(&ship, ship.x, ship.y);
-            } else {
-                ship.x -= shipSpeed;
-                moveGameCharacter(&ship, ship.x, ship.y);
-            }
-        }
-        if (joypad() & J_RIGHT) {
-            if (ship.x >= screenX) {
-                ship.x = screenX;
-                moveGameCharacter(&ship, ship.x, ship.y);
-            } else {
-                ship.x += shipSpeed;
-                moveGameCharacter(&ship, ship.x, ship.y);
-            }
-        }
-        if (joypad() & J_UP) {
-            if (ship.y <= 105) {
-                ship.y = 105;
-                moveGameCharacter(&ship, ship.x, ship.y);
-            } else {
-                ship.y -= shipSpeed;
-                moveGameCharacter(&ship, ship.x, ship.y);
-            }
-        }
-        if (joypad() & J_DOWN) {
-            if (ship.y >= screenY) {
-                ship.y = screenY;
-                moveGameCharacter(&ship, ship.x, ship.y);
-            } else {
-                ship.y += shipSpeed;
-                moveGameCharacter(&ship, ship.x, ship.y);
-            }
-        }
-        
-        // put laser off the screen if the laser touches the top of the screen
-        if (laser.y < offTopScreen) {
-            laser.x = offScreenX;
-            laser.y = offScreenY;
-            moveGameCharacter(&laser, laser.x, laser.y);
-        }
-        
-        // when laser's x coordinate is off the screen, if the laser comes
-        // within the y range of the screen, send it to off screen
-        if (laser.x > screenX) {
-            if (laser.y > offTopScreen && laser.y < screenY) {
-                laser.x = offScreenX;
-                laser.y = offScreenY;
-                moveGameCharacter(&laser, laser.x, laser.y);
-        }
-        }
-        
-        // shoot lasers
-        if ((joypad() & J_A) && (laser.y > screenY)) {
-            laser.x = ship.x;
-            laser.y = ship.y;
-            moveGameCharacter(&laser, laser.x, laser.y);
-            
-            // make sound
-            NR10_REG = 0x00;
-            NR11_REG = 0xEA;
-            NR12_REG = 0x25;
-            NR13_REG = 0xF3;
-            NR14_REG = 0x86;
-        }
-        
-        // check if the laser hits the aliens
-        if (lasercollisions(&laser, &alien)) {
-            alien.x = offScreenX;
-            alien.y = offScreenY;
             moveGameCharacter(&alien, alien.x, alien.y);
             
-            laser.x = offScreenX;
-            laser.y = offScreenY;
-            moveGameCharacter(&laser, laser.x, laser.y);
-            
-            score += 1;
-            
-            NR10_REG = 0x00;
-            NR11_REG = 0x01;
-            NR12_REG = 0x74;
-            NR13_REG = 0xF3;
-            NR14_REG = 0x86;
+            NR21_REG = 0xA3;
+            NR22_REG = 0xA1;
+            NR23_REG = 0xA6;
+            NR24_REG = 0x85;
+            performantDelay(5);        
         }
-        if (score >=  3) {
-            if (lasercollisions(&laser, &alien1)) {
-                alien1.x = offScreenX;
-                alien1.y = offScreenY;
-                moveGameCharacter(&alien1, alien1.x, alien1.y);
+    
+        while(!checkcollisions(&ship, &alien, &alien1, &alien2, &alien3, &alien4)) {
+            if (joypad() & J_LEFT) {
+                if (ship.x <= spriteSize) {
+                    ship.x = spriteSize;
+                    moveGameCharacter(&ship, ship.x, ship.y);
+                } else {
+                    ship.x -= shipSpeed;
+                    moveGameCharacter(&ship, ship.x, ship.y);
+                }
+            }
+            if (joypad() & J_RIGHT) {
+                if (ship.x >= screenX) {
+                    ship.x = screenX;
+                    moveGameCharacter(&ship, ship.x, ship.y);
+                } else {
+                    ship.x += shipSpeed;
+                    moveGameCharacter(&ship, ship.x, ship.y);
+                }
+            }
+            if (joypad() & J_UP) {
+                if (ship.y <= 105) {
+                    ship.y = 105;
+                    moveGameCharacter(&ship, ship.x, ship.y);
+                } else {
+                    ship.y -= shipSpeed;
+                    moveGameCharacter(&ship, ship.x, ship.y);
+                }
+            }
+            if (joypad() & J_DOWN) {
+                if (ship.y >= screenY) {
+                    ship.y = screenY;
+                    moveGameCharacter(&ship, ship.x, ship.y);
+                } else {
+                    ship.y += shipSpeed;
+                    moveGameCharacter(&ship, ship.x, ship.y);
+                }
+            }
+        
+            // put laser off the screen if the laser touches the top of the screen
+            if (laser.y < offTopScreen) {
+                laser.x = offScreenX;
+                laser.y = offScreenY;
+                moveGameCharacter(&laser, laser.x, laser.y);
+            }
+        
+            // when laser's x coordinate is off the screen, if the laser comes
+            // within the y range of the screen, send it to off screen
+            if (laser.x > screenX) {
+                if (laser.y > offTopScreen && laser.y < screenY) {
+                    laser.x = offScreenX;
+                    laser.y = offScreenY;
+                    moveGameCharacter(&laser, laser.x, laser.y);
+            }
+            }
+        
+            // shoot lasers
+            if ((joypad() & J_A) && (laser.y > screenY)) {
+                laser.x = ship.x;
+                laser.y = ship.y;
+                moveGameCharacter(&laser, laser.x, laser.y);
+            
+                // make sound
+                NR10_REG = 0x00;
+                NR11_REG = 0xEA;
+                NR12_REG = 0x25;
+                NR13_REG = 0xF3;
+                NR14_REG = 0x86;
+            }
+        
+            // check if the laser hits the aliens
+            if (lasercollisions(&laser, &alien)) {
+                alien.x = offScreenX;
+                alien.y = offScreenY;
+                moveGameCharacter(&alien, alien.x, alien.y);
             
                 laser.x = offScreenX;
                 laser.y = offScreenY;
                 moveGameCharacter(&laser, laser.x, laser.y);
+            
+                score += 1;
+            
+                NR10_REG = 0x00;
+                NR11_REG = 0x01;
+                NR12_REG = 0x74;
+                NR13_REG = 0xF3;
+                NR14_REG = 0x86;
+            }
+            if (score >=  3) {
+                if (lasercollisions(&laser, &alien1)) {
+                    alien1.x = offScreenX;
+                    alien1.y = offScreenY;
+                    moveGameCharacter(&alien1, alien1.x, alien1.y);
+            
+                    laser.x = offScreenX;
+                    laser.y = offScreenY;
+                    moveGameCharacter(&laser, laser.x, laser.y);
                 
-                score += 1;
+                    score += 1;
             
-                NR10_REG = 0x00;
-                NR11_REG = 0x01;
-                NR12_REG = 0x74;
-                NR13_REG = 0xF3;
-                NR14_REG = 0x86;
+                    NR10_REG = 0x00;
+                    NR11_REG = 0x01;
+                    NR12_REG = 0x74;
+                    NR13_REG = 0xF3;
+                    NR14_REG = 0x86;
+                }
             }
-        }
         
-        if (score >= 8) {
-            if (lasercollisions(&laser, &alien2)) {
-                alien2.x = offScreenX;
-                alien2.y = offScreenY;
-                moveGameCharacter(&alien2, alien2.x, alien2.y);
+            if (score >= 8) {
+                if (lasercollisions(&laser, &alien2)) {
+                    alien2.x = offScreenX;
+                    alien2.y = offScreenY;
+                    moveGameCharacter(&alien2, alien2.x, alien2.y);
+              
+                    laser.x = offScreenX;
+                    laser.y = offScreenY;
+                    moveGameCharacter(&laser, laser.x, laser.y);
             
-                laser.x = offScreenX;
-                laser.y = offScreenY;
-                moveGameCharacter(&laser, laser.x, laser.y);
-            
-                score += 1;
-            
-                NR10_REG = 0x00;
-                NR11_REG = 0x01;
-                NR12_REG = 0x74;
-                NR13_REG = 0xF3;
-                NR14_REG = 0x86;
+                    score += 1;
+             
+                    NR10_REG = 0x00;
+                    NR11_REG = 0x01;
+                    NR12_REG = 0x74;
+                    NR13_REG = 0xF3;
+                    NR14_REG = 0x86;
+                }
             }
-        }
-        if (score >= 15) {
-            if (lasercollisions(&laser, &alien3)) {
-                alien3.x = offScreenX;
-                alien3.y = offScreenY;
-                moveGameCharacter(&alien3, alien3.x, alien3.y);
+            if (score >= 15) {
+                if (lasercollisions(&laser, &alien3)) {
+                    alien3.x = offScreenX;
+                    alien3.y = offScreenY;
+                    moveGameCharacter(&alien3, alien3.x, alien3.y);
             
-                laser.x = offScreenX;
-                laser.y = offScreenY;
-                moveGameCharacter(&laser, laser.x, laser.y);
+                    laser.x = offScreenX;
+                    laser.y = offScreenY;
+                    moveGameCharacter(&laser, laser.x, laser.y);
             
-                NR10_REG = 0x00;
-                NR11_REG = 0x01;
-                NR12_REG = 0x74;
-                NR13_REG = 0xF3;
-                NR14_REG = 0x86;
+                    NR10_REG = 0x00;
+                    NR11_REG = 0x01;
+                    NR12_REG = 0x74;
+                    NR13_REG = 0xF3;
+                    NR14_REG = 0x86;
+                }
             }
-        }
-        if (score >= 25) {
-            if (lasercollisions(&laser, &alien4)) {
-                alien4.x = offScreenX;
-                alien4.y = offScreenY;
-                moveGameCharacter(&alien4, alien4.x, alien4.y);
-            
-                laser.x = offScreenX;
-                laser.y = offScreenY;
-                moveGameCharacter(&laser, laser.x, laser.y);
-            
-                NR10_REG = 0x00;
-                NR11_REG = 0x01;
-                NR12_REG = 0x74;
-                NR13_REG = 0xF3;
-                NR14_REG = 0x86;
+            if (score >= 25) {
+                if (lasercollisions(&laser, &alien4)) {
+                    alien4.x = offScreenX;
+                    alien4.y = offScreenY;
+                    moveGameCharacter(&alien4, alien4.x, alien4.y);
+                
+                    laser.x = offScreenX;
+                    laser.y = offScreenY;
+                    moveGameCharacter(&laser, laser.x, laser.y);
+                
+                    NR10_REG = 0x00;
+                    NR11_REG = 0x01;
+                    NR12_REG = 0x74;
+                    NR13_REG = 0xF3;
+                    NR14_REG = 0x86;
+                }
             }
-        }
-        
-        // laser goes up
-        laser.y -= laserSpeed;
-        moveGameCharacter(&laser, laser.x, laser.y);
-        
-        // alien falls down
-        alien.y += alienSpeed;
-        moveGameCharacter(&alien, alien.x, alien.y);
-        alien1.y += alienSpeed;
-        moveGameCharacter(&alien1, alien1.x, alien1.y);
-        alien2.y += alienSpeed;
-        moveGameCharacter(&alien2, alien2.x, alien2.y);
-        alien3.y += alienSpeed;
-        moveGameCharacter(&alien3, alien3.x, alien3.y);
-        alien4.y += alienSpeed;
-        moveGameCharacter(&alien4, alien4.x, alien4.y);
-        
-        
-        // if the alien is off screen, put it back up 
-        //     on a random x coordinate
-        if (alien.y > offScreenY) {
-            alien.y = 0;
-            randomNumber = (rand() % (screenX - spriteSize + 1) + spriteSize);
-            alien.x = randomNumber;
             
+            // laser goes up
+            laser.y -= laserSpeed;
+            moveGameCharacter(&laser, laser.x, laser.y);
+            
+            // alien falls down
+            alien.y += alienSpeed;
             moveGameCharacter(&alien, alien.x, alien.y);
-        }
-        if (score >= 3) {
-            if (alien1.y > offScreenY) {
-                alien1.y = 0;
-                randomNumber = (rand() % (screenX - spriteSize + 1) + spriteSize);
-                alien1.x = randomNumber;
+            alien1.y += alienSpeed;
+            moveGameCharacter(&alien1, alien1.x, alien1.y);
+            alien2.y += alienSpeed;
+            moveGameCharacter(&alien2, alien2.x, alien2.y);
+            alien3.y += alienSpeed;
+            moveGameCharacter(&alien3, alien3.x, alien3.y);
+            alien4.y += alienSpeed;
+            moveGameCharacter(&alien4, alien4.x, alien4.y);
             
-                moveGameCharacter(&alien1, alien1.x, alien1.y);
-            }
-        }
-        if (score >= 8) {
-            if (alien2.y > offScreenY) {
-                alien2.y = 0;
+        
+            // if the alien is off screen, put it back up 
+            //     on a random x coordinate
+            if (alien.y > offScreenY) {
+                alien.y = 0;
                 randomNumber = (rand() % (screenX - spriteSize + 1) + spriteSize);
-                alien2.x = randomNumber;
-            
-                moveGameCharacter(&alien2, alien2.x, alien2.y);
+                alien.x = randomNumber;
+                
+                moveGameCharacter(&alien, alien.x, alien.y);
             }
-        }
-        if (score >= 15) {
-            if (alien3.y > offScreenY) {
-                alien3.y = 0;
-                randomNumber = (rand() % (screenX - spriteSize + 1) + spriteSize);
-                alien3.x = randomNumber;
-            
-                moveGameCharacter(&alien3, alien3.x, alien3.y);
+            if (score >= 3) {
+                if (alien1.y > offScreenY) {
+                    alien1.y = 0;
+                    randomNumber = (rand() % (screenX - spriteSize + 1) + spriteSize);
+                    alien1.x = randomNumber;
+                
+                    moveGameCharacter(&alien1, alien1.x, alien1.y);
+                }
             }
-        }
-        if (score >= 25) {
-            if (alien4.y > offScreenY) {
-                alien4.y = 0;
-                randomNumber = (rand() % (screenX - spriteSize + 1) + spriteSize);
-                alien4.x = randomNumber;
-            
-                moveGameCharacter(&alien4, alien4.x, alien4.y);
+            if (score >= 8) {
+                if (alien2.y > offScreenY) {
+                    alien2.y = 0;
+                    randomNumber = (rand() % (screenX - spriteSize + 1) + spriteSize);
+                    alien2.x = randomNumber;
+                
+                    moveGameCharacter(&alien2, alien2.x, alien2.y);
+                }
             }
+            if (score >= 15) {
+                if (alien3.y > offScreenY) {
+                    alien3.y = 0;
+                    randomNumber = (rand() % (screenX - spriteSize + 1) + spriteSize);
+                    alien3.x = randomNumber;
+                
+                    moveGameCharacter(&alien3, alien3.x, alien3.y);
+                }
+            }
+            if (score >= 25) {
+                if (alien4.y > offScreenY) {
+                    alien4.y = 0;
+                    randomNumber = (rand() % (screenX - spriteSize + 1) + spriteSize);
+                    alien4.x = randomNumber;
+                
+                    moveGameCharacter(&alien4, alien4.x, alien4.y);
+                }
+            }
+            performantDelay(5);
         }
-        performantDelay(5);
-    }
     
-    // make sound when the ship crashes
-    NR41_REG = 0x1F;
-    NR42_REG = 0xF1;
-    NR43_REG = 0x30;
-    NR44_REG = 0xC0;
+        // make sound when the ship crashes
+        NR41_REG = 0x1F;
+        NR42_REG = 0xF1;
+        NR43_REG = 0x30;
+        NR44_REG = 0xC0;
     
-    // clear off the sprites
-    ship.x = offScreenX;
-    ship.y = offScreenY;
-    moveGameCharacter(&ship, ship.x, ship.y);
+        // clear off the sprites
+        ship.x = offScreenX;
+        ship.y = offScreenY;
+        moveGameCharacter(&ship, ship.x, ship.y);
     
-    laser.x = offScreenX;
-    laser.y = offScreenY;
-    moveGameCharacter(&laser, laser.x, laser.y);
+        laser.x = offScreenX;
+        laser.y = offScreenY;
+        moveGameCharacter(&laser, laser.x, laser.y);
     
-    alien.x = offScreenX;
-    alien.y = offScreenY;
-    moveGameCharacter(&alien, alien.x, alien.y);
+        alien.x = offScreenX;
+        alien.y = offScreenY;
+        moveGameCharacter(&alien, alien.x, alien.y);
+        
+        alien1.x = offScreenX;
+        alien1.y = offScreenY;
+        moveGameCharacter(&alien1, alien1.x, alien1.y);
+        
+        alien2.x = offScreenX;
+        alien2.y = offScreenY;
+        moveGameCharacter(&alien2, alien2.x, alien2.y);
+        
+        alien3.x = offScreenX;
+        alien3.y = offScreenY;
+        moveGameCharacter(&alien3, alien3.x, alien3.y);
+        
+        alien4.x = offScreenX;
+        alien4.y = offScreenY;
+        moveGameCharacter(&alien4, alien4.x, alien4.y);
     
-    alien1.x = offScreenX;
-    alien1.y = offScreenY;
-    moveGameCharacter(&alien1, alien1.x, alien1.y);
-    
-    alien2.x = offScreenX;
-    alien2.y = offScreenY;
-    moveGameCharacter(&alien2, alien2.x, alien2.y);
-    
-    alien3.x = offScreenX;
-    alien3.y = offScreenY;
-    moveGameCharacter(&alien3, alien3.x, alien3.y);
-    
-    alien4.x = offScreenX;
-    alien4.y = offScreenY;
-    moveGameCharacter(&alien4, alien4.x, alien4.y);
-    
-    endScene();
+        endScene();
+        // to restart, press select
+        waitpad(J_SELECT);
+        // reset the score to 0
+        score = 0;
+        }
 }
+
